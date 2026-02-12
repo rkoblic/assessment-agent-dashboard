@@ -1,65 +1,67 @@
-import Image from "next/image";
+"use client";
 
-export default function Home() {
+import { useState } from "react";
+import { useRouter } from "next/navigation";
+import type { AssessmentMode } from "@/lib/types";
+import { usePersonas } from "@/hooks/usePersonas";
+import { ModeSelector } from "@/components/launch/ModeSelector";
+import { PersonaCard } from "@/components/launch/PersonaCard";
+import { Spinner } from "@/components/ui/Spinner";
+
+export default function LaunchPage() {
+  const router = useRouter();
+  const { personas, loading } = usePersonas();
+  const [mode, setMode] = useState<AssessmentMode | null>(null);
+  const [selectedPersona, setSelectedPersona] = useState<string | null>(null);
+
+  const handleStart = () => {
+    if (!mode) return;
+    if (mode === "real") {
+      router.push("/assess");
+    } else {
+      router.push(`/assess/demo${selectedPersona ? `?persona=${selectedPersona}` : ""}`);
+    }
+  };
+
   return (
-    <div className="flex min-h-screen items-center justify-center bg-zinc-50 font-sans dark:bg-black">
-      <main className="flex min-h-screen w-full max-w-3xl flex-col items-center justify-between py-32 px-16 bg-white dark:bg-black sm:items-start">
-        <Image
-          className="dark:invert"
-          src="/next.svg"
-          alt="Next.js logo"
-          width={100}
-          height={20}
-          priority
-        />
-        <div className="flex flex-col items-center gap-6 text-center sm:items-start sm:text-left">
-          <h1 className="max-w-xs text-3xl font-semibold leading-10 tracking-tight text-black dark:text-zinc-50">
-            To get started, edit the page.tsx file.
-          </h1>
-          <p className="max-w-md text-lg leading-8 text-zinc-600 dark:text-zinc-400">
-            Looking for a starting point or more instructions? Head over to{" "}
-            <a
-              href="https://vercel.com/templates?framework=next.js&utm_source=create-next-app&utm_medium=appdir-template-tw&utm_campaign=create-next-app"
-              className="font-medium text-zinc-950 dark:text-zinc-50"
-            >
-              Templates
-            </a>{" "}
-            or the{" "}
-            <a
-              href="https://nextjs.org/learn?utm_source=create-next-app&utm_medium=appdir-template-tw&utm_campaign=create-next-app"
-              className="font-medium text-zinc-950 dark:text-zinc-50"
-            >
-              Learning
-            </a>{" "}
-            center.
-          </p>
+    <div className="mx-auto max-w-3xl px-4 py-12">
+      <h1 className="mb-2 text-3xl font-bold text-gray-900">Assessment Agent</h1>
+      <p className="mb-8 text-gray-600">
+        AI-powered adaptive assessment of learner understanding in fractions (CCSS-M Grades 2-5).
+      </p>
+
+      <div className="mb-8">
+        <h2 className="mb-3 text-lg font-semibold text-gray-900">Choose Mode</h2>
+        <ModeSelector selected={mode} onSelect={setMode} />
+      </div>
+
+      {mode === "synthetic" && (
+        <div className="mb-8">
+          <h2 className="mb-3 text-lg font-semibold text-gray-900">Choose Persona</h2>
+          {loading ? (
+            <Spinner />
+          ) : (
+            <div className="grid gap-3 sm:grid-cols-3">
+              {personas.map((p) => (
+                <PersonaCard
+                  key={p.name}
+                  persona={p}
+                  selected={selectedPersona === p.name}
+                  onSelect={() => setSelectedPersona(p.name)}
+                />
+              ))}
+            </div>
+          )}
         </div>
-        <div className="flex flex-col gap-4 text-base font-medium sm:flex-row">
-          <a
-            className="flex h-12 w-full items-center justify-center gap-2 rounded-full bg-foreground px-5 text-background transition-colors hover:bg-[#383838] dark:hover:bg-[#ccc] md:w-[158px]"
-            href="https://vercel.com/new?utm_source=create-next-app&utm_medium=appdir-template-tw&utm_campaign=create-next-app"
-            target="_blank"
-            rel="noopener noreferrer"
-          >
-            <Image
-              className="dark:invert"
-              src="/vercel.svg"
-              alt="Vercel logomark"
-              width={16}
-              height={16}
-            />
-            Deploy Now
-          </a>
-          <a
-            className="flex h-12 w-full items-center justify-center rounded-full border border-solid border-black/[.08] px-5 transition-colors hover:border-transparent hover:bg-black/[.04] dark:border-white/[.145] dark:hover:bg-[#1a1a1a] md:w-[158px]"
-            href="https://nextjs.org/docs?utm_source=create-next-app&utm_medium=appdir-template-tw&utm_campaign=create-next-app"
-            target="_blank"
-            rel="noopener noreferrer"
-          >
-            Documentation
-          </a>
-        </div>
-      </main>
+      )}
+
+      <button
+        onClick={handleStart}
+        disabled={!mode || (mode === "synthetic" && !selectedPersona)}
+        className="rounded-lg bg-blue-600 px-6 py-3 text-sm font-medium text-white hover:bg-blue-700 disabled:cursor-not-allowed disabled:bg-gray-300"
+      >
+        Start Assessment
+      </button>
     </div>
   );
 }
