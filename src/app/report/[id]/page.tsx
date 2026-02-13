@@ -22,7 +22,25 @@ export default function ReportPage() {
   useEffect(() => {
     fetchAssessment(params.id)
       .then((data) => {
-        const r = (data.report ?? data) as EvidenceReport;
+        // Backend nests report fields under data.report and uses
+        // "evidence_map" instead of "standards_evidence_map".
+        // Top-level has: id, mode, persona_name, started_at, etc.
+        const nested = data.report as Record<string, unknown> | undefined;
+        const r: EvidenceReport = {
+          session_id: data.id as string,
+          mode: data.mode as EvidenceReport["mode"],
+          persona_name: (data.persona_name as string) ?? null,
+          started_at: data.started_at as string,
+          ended_at: (data.ended_at as string) ?? "",
+          turn_count: data.turn_count as number,
+          progression_summary: (nested?.progression_summary as string) ?? "",
+          standards_evidence_map: (nested?.evidence_map ?? nested?.standards_evidence_map ?? []) as EvidenceReport["standards_evidence_map"],
+          misconception_report: (nested?.misconception_report ?? []) as EvidenceReport["misconception_report"],
+          overall_narrative: (nested?.overall_narrative as string) ?? "",
+          recommended_next_steps: (nested?.recommended_next_steps ?? []) as string[],
+          stop_reason: (nested?.stop_reason as EvidenceReport["stop_reason"]) ?? "sufficient_evidence",
+          conversation_log: (data.conversation ?? []) as EvidenceReport["conversation_log"],
+        };
         setReport(r);
       })
       .catch((err) => setError(err.message));
