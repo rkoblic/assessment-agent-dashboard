@@ -1,36 +1,82 @@
-This is a [Next.js](https://nextjs.org) project bootstrapped with [`create-next-app`](https://nextjs.org/docs/app/api-reference/cli/create-next-app).
+# Assessment Agent Dashboard
 
-## Getting Started
+Next.js frontend for the [Assessment Agent](https://github.com/rkoblic/assessment-agent) — an AI-powered adaptive assessment of learner understanding in fractions (CCSS-M, Grades 2-5).
 
-First, run the development server:
+**Live:** https://assessment-agent-dashboard.vercel.app
+
+## Pages
+
+| Route | Description |
+|-------|-------------|
+| `/` | Launch page — choose assessment mode and persona |
+| `/assess` | Real learner chat — type responses to the agent's questions |
+| `/assess/demo?persona=Mia` | Synthetic demo — watch an automated assessment with agent internals sidebar |
+| `/report/[id]` | Evidence report — standards map, misconceptions, narrative, recommendations |
+| `/assessments` | Assessment history — filterable table of past assessments |
+
+## Architecture
+
+- **SSE-over-POST** — Browser's `EventSource` only supports GET, so we use `fetch()` + `ReadableStream` with manual SSE frame parsing to stream from POST endpoints
+- **`useReducer` state machine** — Handles rapid SSE events with 12 action types and status transitions: `idle` → `connecting` → `active` → `waiting_for_input` → `complete`
+- **Two assessment flows:**
+  - *Synthetic:* One long-lived SSE connection streams the full assessment
+  - *Real:* Initial connection yields first question, then a new connection per learner response
+
+## Setup
 
 ```bash
+# Clone
+git clone git@github.com:rkoblic/assessment-agent-dashboard.git
+cd assessment-agent-dashboard
+
+# Install dependencies
+npm install
+
+# Configure
+cp .env.example .env.local
+# Edit .env.local with the backend API URL
+
+# Run dev server
 npm run dev
-# or
-yarn dev
-# or
-pnpm dev
-# or
-bun dev
 ```
 
-Open [http://localhost:3000](http://localhost:3000) with your browser to see the result.
+## Environment Variables
 
-You can start editing the page by modifying `app/page.tsx`. The page auto-updates as you edit the file.
+| Variable | Default | Description |
+|----------|---------|-------------|
+| `NEXT_PUBLIC_API_URL` | `https://assessment-agent-production.up.railway.app` | Backend API base URL |
 
-This project uses [`next/font`](https://nextjs.org/docs/app/building-your-application/optimizing/fonts) to automatically optimize and load [Geist](https://vercel.com/font), a new font family for Vercel.
+## Project Structure
 
-## Learn More
+```
+src/
+├── app/
+│   ├── page.tsx                  # Launch page
+│   ├── assess/
+│   │   ├── page.tsx              # Real learner chat
+│   │   └── demo/page.tsx         # Synthetic demo + sidebar
+│   ├── report/[id]/page.tsx      # Evidence report
+│   └── assessments/page.tsx      # History table
+├── components/
+│   ├── Header.tsx
+│   ├── chat/                     # ChatContainer, MessageBubble, ChatInput, TypingIndicator
+│   ├── sidebar/                  # DemoSidebar (chronological turn-based feed)
+│   ├── report/                   # ReportHeader, StandardsMap, MisconceptionReport, etc.
+│   ├── history/                  # AssessmentTable, FilterBar
+│   ├── launch/                   # ModeSelector, PersonaCard
+│   └── ui/                       # Badge, Card, Spinner
+├── hooks/
+│   ├── useAssessment.ts          # Core SSE + useReducer state machine
+│   ├── usePersonas.ts            # GET /personas
+│   └── useAssessmentHistory.ts   # GET /assessments
+└── lib/
+    ├── types.ts                  # TypeScript types mirroring backend
+    ├── api.ts                    # REST fetch wrappers
+    ├── sse.ts                    # SSE-over-POST streaming client
+    ├── constants.ts              # Color maps, persona descriptions
+    └── report-export.ts          # Markdown generation + download
+```
 
-To learn more about Next.js, take a look at the following resources:
+## Deployment
 
-- [Next.js Documentation](https://nextjs.org/docs) - learn about Next.js features and API.
-- [Learn Next.js](https://nextjs.org/learn) - an interactive Next.js tutorial.
-
-You can check out [the Next.js GitHub repository](https://github.com/vercel/next.js) - your feedback and contributions are welcome!
-
-## Deploy on Vercel
-
-The easiest way to deploy your Next.js app is to use the [Vercel Platform](https://vercel.com/new?utm_medium=default-template&filter=next.js&utm_source=create-next-app&utm_campaign=create-next-app-readme) from the creators of Next.js.
-
-Check out our [Next.js deployment documentation](https://nextjs.org/docs/app/building-your-application/deploying) for more details.
+Deployed on Vercel with automatic GitHub deployments. Set `NEXT_PUBLIC_API_URL` in the Vercel project environment variables.
