@@ -11,6 +11,12 @@ export function Header() {
           <Link href="/" className="text-gray-600 hover:text-gray-900">
             Launch
           </Link>
+          <Link href="/demo" className="text-gray-600 hover:text-gray-900">
+            Demo
+          </Link>
+          <Link href="/prompt" className="text-gray-600 hover:text-gray-900">
+            Prompt
+          </Link>
           <Link href="/assessments" className="text-gray-600 hover:text-gray-900">
             History
           </Link>

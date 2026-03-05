@@ -36,3 +36,24 @@ export function fetchProgressions() {
 export function fetchMisconceptions() {
   return fetchJSON<Misconception[]>("/domain/misconceptions");
 }
+
+export function fetchDemo() {
+  return fetchJSON<DemoAssessment>("/demo");
+}
+
+export async function fetchPrompt(): Promise<string> {
+  const res = await fetch(`${API_BASE}/prompt`);
+  if (!res.ok) throw new Error(`API error ${res.status}: /prompt`);
+  return res.text();
+}
+
+export interface DemoAssessment {
+  session_id: string;
+  persona: { name: string; grade_level: number };
+  events: DemoEvent[];
+}
+
+export interface DemoEvent {
+  event: string;
+  data: Record<string, unknown>;
+}
